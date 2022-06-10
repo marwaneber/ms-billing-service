@@ -7,11 +7,15 @@ import com.example.billingservice.feign.CustomerRestClient;
 import com.example.billingservice.feign.ProductItemRestClient;
 import com.example.billingservice.model.Customer;
 import com.example.billingservice.model.Product;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
+@CrossOrigin(origins="http://localhost:3000")
 public class BillingRestController {
     private BillRepository billRepository;
     private ProductItemRepository productItemRepository;
@@ -26,7 +30,7 @@ public class BillingRestController {
     }
 
     @GetMapping(path = "/fullBill/{id}")
-    public Bill getBill (@PathVariable Long id){
+    public Bill getBill (@PathVariable (name = "id") Long id){
         Bill bill = billRepository.findById(id).get();
         Customer customer = customerRestClient.getCustomerById(bill.getCustomerId());
         bill.setCustomer(customer);
@@ -37,5 +41,20 @@ public class BillingRestController {
         return bill;
     }
 
+
+    @GetMapping(path = "/allBill")
+    public List<Bill> getAllBill (){
+        List<Bill> bill = billRepository.findAll();
+        bill.forEach(bi -> {
+            Customer customer = customerRestClient.getCustomerById(bi.getCustomerId());
+            bi.setCustomer(customer);
+            bi.getProductItems().forEach(pi -> {
+                Product product = productItemRestClient.getProductById(pi.getProductID());
+                pi.setProduct(product);
+            });
+        });
+
+        return bill;
+    }
 
 }
